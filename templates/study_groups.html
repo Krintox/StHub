@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Groups</title>
+    <link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+    <h1>Study Groups</h1>
+    <div id="study-groups-list">
+        <!-- Study groups will be dynamically inserted here -->
+    </div>
+    
+    <!-- Template for a study group card -->
+    <template id="study-group-template">
+        <div class="study-group-card">
+            <h2 class="study-group-name"></h2>
+            <p class="study-group-description"></p>
+            <p class="study-group-members"></p>
+        </div>
+    </template>
+
+    <script>
+        // Fetch study groups data from backend and render them
+        window.onload = async function() {
+            const response = await fetch('/api/study-groups');
+            const studyGroups = await response.json();
+            const studyGroupsList = document.getElementById('study-groups-list');
+            const template = document.getElementById('study-group-template');
+
+            studyGroups.forEach(group => {
+                const clone = template.content.cloneNode(true);
+                clone.querySelector('.study-group-name').innerText = group.name;
+                clone.querySelector('.study-group-description').innerText = group.description;
+                clone.querySelector('.study-group-members').innerText = `Members: ${group.members.join(', ')}`;
+                studyGroupsList.appendChild(clone);
+            });
+        };
+    </script>
+</body>
+</html>
