@@ -35,7 +35,6 @@ var userCollection *mongo.Collection
 var groupCollection *mongo.Collection
 
 func main() {
-	// Connect to MongoDB
 	clientOptions := options.Client().ApplyURI("mongodb+srv://krintox:shanks@cluster0.xbzutsa.mongodb.net/")
 	var err error
 	db, err = mongo.Connect(context.Background(), clientOptions)
@@ -44,16 +43,12 @@ func main() {
 	}
 	defer db.Disconnect(context.Background())
 
-	// Initialize Gin router
 	router := gin.Default()
 
-	// Load HTML templates
 	router.LoadHTMLGlob("templates/*")
 
-	// Serve static files
 	router.Static("/static", "./static")
 
-	// Routes
 	router.GET("/", indexHandler)
 	router.POST("/register", register)
 	router.POST("/login", login)
@@ -70,9 +65,7 @@ func main() {
 	}
 }
 
-// Middleware to check if user is authenticated
 func authMiddleware(c *gin.Context) {
-	// Get JWT token from request header
 	tokenString := c.GetHeader("Authorization")
 	if tokenString == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing token"})
@@ -80,13 +73,10 @@ func authMiddleware(c *gin.Context) {
 		return
 	}
 
-	// Parse and validate JWT token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Check token signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		// Provide the secret key used to sign the token
 		return []byte("your-secret-key"), nil
 	})
 	if err != nil || !token.Valid {
@@ -95,7 +85,6 @@ func authMiddleware(c *gin.Context) {
 		return
 	}
 
-	// Token is valid, continue with the next handler
 	c.Next()
 }
 
@@ -110,7 +99,6 @@ func register(c *gin.Context) {
 		return
 	}
 
-	// Hash the password before storing in the database
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
@@ -118,7 +106,6 @@ func register(c *gin.Context) {
 	}
 	newUser.Password = string(hashedPassword)
 
-	// Insert user into database
 	userCollection := db.Database("studyhub").Collection("users")
 	_, err = userCollection.InsertOne(context.Background(), newUser)
 	if err != nil {
@@ -136,7 +123,6 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// Retrieve user from the database by username
 	userCollection := db.Database("studyhub").Collection("users")
 	err := userCollection.FindOne(context.Background(), bson.M{"username": user.Username}).Decode(&user)
 	if err != nil {
@@ -144,32 +130,27 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// Compare hashed password with input password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(user.Password))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	// Generate JWT token
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["username"] = user.Username
-	claims["exp"] = time.Now().Add(time.Hour * 24).Unix() // Token expiry time
+	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
-	// Sign the token with a secret key
 	signedToken, err := token.SignedString([]byte("your-secret-key"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
 
-	// Return the token in the response
 	c.JSON(http.StatusOK, gin.H{"token": signedToken})
 }
 
 func getStudyGroups(c *gin.Context) {
-	// Retrieve study groups from the database
 	groupCollection := db.Database("studyhub").Collection("study_groups")
 	cursor, err := groupCollection.Find(context.Background(), bson.M{})
 	if err != nil {
@@ -194,10 +175,8 @@ func createStudyGroup(c *gin.Context) {
 		return
 	}
 
-	// Generate ID for the new study group
 	newGroup.ID = strconv.FormatInt(time.Now().Unix(), 10)
 
-	// Insert study group into database
 	groupCollection := db.Database("studyhub").Collection("study_groups")
 	_, err := groupCollection.InsertOne(context.Background(), newGroup)
 	if err != nil {

@@ -9,10 +9,8 @@
 <body>
     <h1>Study Groups</h1>
     <div id="study-groups-list">
-        <!-- Study groups will be dynamically inserted here -->
     </div>
     
-    <!-- Template for a study group card -->
     <template id="study-group-template">
         <div class="study-group-card">
             <h2 class="study-group-name"></h2>
@@ -22,7 +20,6 @@
     </template>
 
     <script>
-        // Fetch study groups data from backend and render them
         window.onload = async function() {
             const response = await fetch('/api/study-groups');
             const studyGroups = await response.json();
